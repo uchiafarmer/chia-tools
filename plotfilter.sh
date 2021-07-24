@@ -22,26 +22,105 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 # Plot Filter -- A small script to separate OG plots from NFT plots.
 
-# TODO
-# 
-# Check for the arguments
-#     -t Target path(s)
-#          If no paths specified use $PWD
-#     -d Directory to place OG plots (Default: plots-og)
-#     -v Verbosity
-#     -i Interactive Mode?
-#     -h Print the help string
-# 
-# Check if path directory exists:
-# If not,
-#   print error msg 'directory does not exist'
-#   exit
-#
-# Check if $DESTN_DIR exists, if not, create it in $TARGET_PATH dir
-# 
+DEBUG=true
+
+function usage {
+    echo
+    echo "usage: ./plotfilter.sh [OPTIONS...]"
+    echo
+    echo -e "  -t\t target directory (default: current directory)"
+    echo -e "  -d\t destination directory "\
+                        "(default: '[target directory]/plots-og')"
+    echo -e "  -i\t interactive mode (default: false)"
+    echo -e "  -v\t verbose mode"
+    echo -e "  -h\t displays this help information"
+    echo
+    exit 1
+}
+
+# Get options
+while getopts t:d:vih OPT
+do
+    case "$OPT" in
+        t) TARGET_DIR=$OPTARG;;
+        d) DEST_DIR=$OPTARG;;
+        i) INTERACTIVE=true;;
+        v) VERBOSE=true;;
+        h) usage;;
+        *) echo
+            echo "bad option:"
+            usage;;
+    esac
+done
+
+# load defaults
+if [ -z $VERBOSE ]; then
+    VERBOSE=false
+fi
+if [ -z $TARGET_DIR ]; then
+    TARGET_DIR=$PWD
+fi
+if [ -z $DEST_DIR ]; then
+    DEST_DIR=$TARGET_DIR/plots-og
+fi
+if [ -z $INTERACTIVE ]; then
+    INTERACTIVE=false
+fi
+
+if $DEBUG; then 
+    echo
+    echo "TARGET_DIR=$TARGET_DIR"
+    echo "DEST_DIR=$DEST_DIR"
+    echo "INTERACTIVE=$INTERACTIVE"
+    echo "VERBOSE=$VERBOSE"
+    echo
+fi
+
+# Check if path directory exists
+if [ -d $TARGET_DIR ]; then
+    if [[ $VERBOSE = true || $DEBUG = true ]]; then
+        echo "target directory found: $TARGET_DIR"
+    fi
+else
+    echo "error: target directory not found"
+    echo
+    exit 1
+fi
+
+# Check if destination directory  exists. if not, create it
+if [ -d $DEST_DIR ]; then
+    if [[ $VERBOSE = true || $DEBUG = true ]]; then 
+        echo "destination directory found: $DEST_DIR"
+    fi
+else
+    if [[ $VERBOSE = true || $DEBUG = true ]]; then 
+        echo -n "destination directory not found, creating new directory: "
+        echo $DEST_DIR
+    fi
+    mkdir -p $DEST_DIR
+    if ! [ $? = 0 ]; then
+        echo "error: could not create destination directory"
+        echo
+        exit 1
+    fi
+fi
+
+# chia checking code
+# check for chia environment
+if echo $VIRTUAL_ENV | grep chia-blockchain &> /dev/null; then
+    if [[ $VERBOSE = true || $DEBUG = true ]]; then
+        echo "'chia-blockchain' virtual environment detected. proceeding."
+    fi
+else
+    echo
+    echo "Please run this program with the 'chia-blockchain'" \
+            "environment activated"
+    echo
+    exit 1
+fi
+
 # Check if $TARGET_PATH is in `chia plots show`
 #     if not, add to chia plots with `chia plots add -d $TARGET_PATH`
 #  
