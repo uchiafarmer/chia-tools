@@ -60,7 +60,7 @@ function tstamp {
     DATE_FORMAT="+%F %T.%3N"
     if $TIMESTAMP; then
         STAMP=$(date "$DATE_FORMAT")
-        echo "${STAMP}  "
+        echo "${STAMP} "
     fi
 }
 
@@ -93,7 +93,7 @@ if [ -z $VERBOSE ]; then
 fi
 
 if $DEBUG; then 
-    echo "$(tstamp)debug information:"
+    echo "$(tstamp) debug information:"
     echo
     echo "TARGET_DIR=$TARGET_DIR"
     echo "DRY_RUN=$DRY_RUN"
@@ -104,18 +104,18 @@ fi
 
 # Notify user if this is a dry run
 if $DRY_RUN; then
-    echo "$(tstamp)========================="
-    echo "$(tstamp)INFO: Dry run in progress"
-    echo "$(tstamp)========================="
+    echo "$(tstamp) ========================="
+    echo "$(tstamp) INFO: Dry run in progress"
+    echo "$(tstamp) ========================="
 fi
 
 # Check if target directory exists
 if [ -d $TARGET_DIR ]; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then
-        echo "$(tstamp)Target directory found: $TARGET_DIR"
+        echo "$(tstamp) Target directory found: $TARGET_DIR"
     fi
 else
-    echo "$(tstamp)Error: target directory not found"
+    echo "$(tstamp) Error: target directory not found"
     echo
     exit 1
 fi
@@ -123,18 +123,18 @@ fi
 # Check if destination directory exists. if not, create it
 if [ -d $DEST_DIR ]; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then 
-        echo "$(tstamp)Destination directory found: $DEST_DIR"
+        echo "$(tstamp) Destination directory found: $DEST_DIR"
     fi
     DEST_DIR_WAS_CREATED=false
 else
     if [[ $VERBOSE = true || $DEBUG = true ]]; then 
-        echo -n "$(tstamp)Destination directory not found," \
+        echo -n "$(tstamp) Destination directory not found," \
                 "creating new directory: "
         echo $DEST_DIR
     fi
     if $DRY_RUN; then
         if [[ $VERBOSE = true || $DEBUG = true ]]; then 
-            echo "$(tstamp)Dry run. Skipping."
+            echo "$(tstamp) Dry run. Skipping."
         fi
     else
         # Make destination directory
@@ -142,12 +142,12 @@ else
 
         # Check successful operation or fail
         if ! [ $? = 0 ]; then
-            echo "$(tstamp)Error: could not create destination directory"
+            echo "$(tstamp) Error: could not create destination directory"
             echo
             exit 1
         else
             if [[ $VERBOSE = true || $DEBUG = true ]]; then 
-                echo "$(tstamp)Destination directory was created: $DEST_DIR"
+                echo "$(tstamp) Destination directory was created: $DEST_DIR"
             fi
             DEST_DIR_WAS_CREATED=true
         fi
@@ -158,11 +158,11 @@ fi
 # check for chia environment
 if echo $VIRTUAL_ENV | grep chia-blockchain &> /dev/null; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then
-        echo "$(tstamp)'chia-blockchain' virtual environment detected:" \
+        echo "$(tstamp) 'chia-blockchain' virtual environment detected:" \
              "proceeding"
     fi
 else
-    echo "$(tstamp)Please run this program with the 'chia-blockchain'" \
+    echo "$(tstamp) Please run this program with the 'chia-blockchain'" \
             "environment activated"
     exit 1
 fi
@@ -171,39 +171,39 @@ fi
 IFS=$'\n'
 if chia plots show | grep -i $TARGET_DIR &> /dev/null; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then
-        echo "$(tstamp)Target directory already exists in 'chia plot' paths"
+        echo "$(tstamp) Target directory already exists in 'chia plot' paths"
     fi
     ADDED_TO_CHIA_PLOTS=false
 else
-    echo "$(tstamp)WARNING: Target directory does not exist" \
+    echo "$(tstamp) WARNING: Target directory does not exist" \
                   "in 'chia plots' paths"
-    echo "$(tstamp)Adding target directory to 'chia plots'"
+    echo "$(tstamp) Adding target directory to 'chia plots'"
     chia plots add -d $TARGET_DIR &> /dev/null
     if chia plots show | grep -i $TARGET_DIR &> /dev/null; then
-        echo "$(tstamp)Target directory successfully added."
+        echo "$(tstamp) Target directory successfully added."
         ADDED_TO_CHIA_PLOTS=true
     else
-        echo "$(tstamp)Error. could not verify target directory was added to "\
-             "'chia plots' paths"
+        echo "$(tstamp) Error. could not verify target directory was added "\
+             "to 'chia plots' paths"
         echo
         exit 1
     fi
 fi
 
 # Grab 'chia plots check' output
-echo "$(tstamp)Scanning target directory..."
+echo "$(tstamp) Scanning target directory..."
 PLOTS_CHECK=$(chia plots check -g $TARGET_DIR -n 5 2>&1)
-echo "$(tstamp)Scan complete"
+echo "$(tstamp) Scan complete"
 
 # If target directory was added to 'chia plots' by this program,
 # remove it here
 if $ADDED_TO_CHIA_PLOTS; then
-    echo "$(tstamp)Cleaning up." \
+    echo "$(tstamp) Cleaning up." \
          "Removing target directory from 'chia plots' paths"
     chia plots remove -d $TARGET_DIR &> /dev/null
 fi
 # Check plots for OG plots
-echo "$(tstamp)Checking plots... "
+echo "$(tstamp) Checking plots... "
 OG_COUNT=0
 MOVED_COUNT=0
 for line in $PLOTS_CHECK
@@ -214,7 +214,7 @@ do
         # Store plot filename
         PLOT_FNAME=$(echo $line | awk '{ print $8 }')
         if $DEBUG; then
-            echo "$(tstamp)Found plot: $PLOT_FNAME"
+            echo "$(tstamp) Found plot: $PLOT_FNAME"
         fi
     fi
     
@@ -224,7 +224,7 @@ do
         # Store key value
         POOL_PK=$(echo $line | awk '{ print $9 }')
         if $DEBUG; then
-            echo "$(tstamp)Pool public key: '$POOL_PK'"
+            echo "$(tstamp) Pool public key: '$POOL_PK'"
         fi
 
         # Check if key is equal to None
@@ -232,28 +232,28 @@ do
         if echo $POOL_PK | grep 'None' &> /dev/null
         then
             if [[ $VERBOSE = true || $DEBUG = true ]]; then
-                echo "$(tstamp)NFT plot found: $PLOT_FNAME"
+                echo "$(tstamp) NFT plot found: $PLOT_FNAME"
                 if $DEBUG; then
-                    echo "$(tstamp)Skipping"
+                    echo "$(tstamp) Skipping"
                 fi
             fi
         else
             # If not None, move plot to desination directory
-            echo "$(tstamp)OG plot found: $PLOT_FNAME"
+            echo "$(tstamp) OG plot found: $PLOT_FNAME"
             if $DRY_RUN; then
                 if $DEBUG; then
-                    echo "$(tstamp)Dry run. Skipping."
+                    echo "$(tstamp) Dry run. Skipping."
                 fi
             else
                 if [[ $VERBOSE = true || $DEBUG = true ]]; then
-                    echo "$(tstamp)Moving plot to: $DEST_DIR"
+                    echo "$(tstamp) Moving plot to: $DEST_DIR"
                 fi
                 mv $PLOT_FNAME $DEST_DIR
                 if ! [ $? = 0 ]; then
-                    echo "$(tstamp)Copy failed."
+                    echo "$(tstamp) Copy failed."
                 else
                     if $DEBUG; then
-                        echo "$(tstamp)Move command finished sucessfully."
+                        echo "$(tstamp) Move command finished sucessfully."
                     fi
                     (( MOVED_COUNT++ ))
                 fi
@@ -266,12 +266,12 @@ do
     fi
 # Repeat until all plots checked
 done
-echo "$(tstamp)Finished."
+echo "$(tstamp) Finished."
 
 # If no plots were found, and $DEST_DIR was created, remove it.
 if [[ $DEST_DIR_WAS_CREATED = true && $OG_COUNT = 0 ]]; then
         if [[ $VERBOSE = true || $DEBUG = true ]]; then
-            echo "$(tstamp)Clean up. Destination directory was not needed." \
+            echo "$(tstamp) Clean up. Destination directory was not needed." \
             "Removing..."
         fi
         # Remove unused destination directory
@@ -279,14 +279,15 @@ if [[ $DEST_DIR_WAS_CREATED = true && $OG_COUNT = 0 ]]; then
 fi
 
 # Print summary 
-echo "$(tstamp)=== Summary ==="
-echo "$(tstamp)OG plots found: $OG_COUNT"
-echo "$(tstamp)OG plots moved: $MOVED_COUNT"
+echo "$(tstamp) === Summary ==="
+echo "$(tstamp) OG plots found: $OG_COUNT"
+echo "$(tstamp) OG plots moved: $MOVED_COUNT"
 if [[ $MOVED_COUNT > 0 ]]; then
-    echo "$(tstamp)Moved plots to location: $DEST_DIR"
-    echo "$(tstamp)*** Please add this directory to your Chia program if you" \
-        "wish to continue farming with them. ***"
+    echo "$(tstamp) Moved plots to location: $DEST_DIR"
+    echo "$(tstamp) *** Please add this directory to your Chia program if" \
+        "you wish to continue farming with them. ***"
 fi
 
+echo "$(tstamp) Program complete."
+echo
 # End of program.
-echo "$(tstamp)Program complete."
