@@ -32,20 +32,22 @@ DEBUG=false
 
 function usage {
     echo
-    echo "usage: ./plotfilter.sh [OPTIONS...]"
+    echo "usage: plotfilter [OPTIONS...]"
     echo
-    echo "Example:   ./plotfilter.sh -n -t /media/foo/bar "
-    echo "     or:   ./plotfilter.sh -t /media/foo/bar "
-    echo "     or:   ./plotfilter.sh -t /media/foo/bar -d" \
+    echo "Example:   plotfilter -n -t /media/foo/bar "
+    echo "     or:   plotfilter -t /media/foo/bar "
+    echo "     or:   plotfilter -t /media/foo/bar -d" \
          "/media/foo/bar/og-plots"
     echo
-    echo -e "  -t <PATH>\t target directory [REQUIRED]"
+    echo -e "  -t <PATH>\t target directory [OPTIONAL]"
+    echo -e "\t\t (Default: 'current working directory')"
     echo -e "  -d <PATH>\t destination directory [OPTIONAL]"
-    echo -e "\t\t (DEFAULT: '<target directory>/og-plots')"
-    echo -e "\t\t Note: Must use absolute path (e.g /home/<USER HOME>/og-plots)"
+    echo -e "\t\t (Default: '<target directory>/og-plots')"
     echo -e "  -n\t\t dry run (no files will be moved or modified)"
     echo -e "  -v\t\t verbose mode"
     echo -e "  -h\t\t displays this help information"
+    echo
+    echo "NOTE: Use absolute pathnames for <PATH> (e.g /home/<USER HOME>/og-plots)"
     echo
     exit 1
 }
@@ -66,8 +68,7 @@ done
 
 # load defaults, check options
 if [ -z $TARGET_DIR ]; then
-    echo "Error: must specify target directory"
-    usage
+    TARGET_DIR=$PWD
 fi
 if [ -z $DEST_DIR ]; then
     DEST_DIR=$TARGET_DIR/og-plots
@@ -112,6 +113,7 @@ if [ -d $DEST_DIR ]; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then 
         echo "$(date): Destination directory found: $DEST_DIR"
     fi
+    DEST_DIR_WAS_CREATED=false
 else
     if [[ $VERBOSE = true || $DEBUG = true ]]; then 
         echo -n "$(date): Destination directory not found," \
@@ -123,11 +125,19 @@ else
             echo "$(date): Dry run. Skipping."
         fi
     else
+        # Make destination directory
         mkdir -p $DEST_DIR
+
+        # Check successful operation or fail
         if ! [ $? = 0 ]; then
             echo "$(date): Error: could not create destination directory"
             echo
             exit 1
+        else
+            if [[ $VERBOSE = true || $DEBUG = true ]]; then 
+                echo "$(date): Destination directory was created: $DEST_DIR"
+            fi
+            DEST_DIR_WAS_CREATED=true
         fi
     fi
 fi
@@ -151,7 +161,7 @@ if chia plots show | grep -i $TARGET_DIR &> /dev/null; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then
         echo "$(date): Target directory already exists in 'chia plot' paths"
     fi
-    WAS_ADDED=false
+    ADDED_TO_CHIA_PLOTS=false
 else
     echo "$(date): WARNING: Target directory does not exist" \
                   "in 'chia plots' paths"
@@ -159,7 +169,7 @@ else
     chia plots add -d $TARGET_DIR &> /dev/null
     if chia plots show | grep -i $TARGET_DIR &> /dev/null; then
         echo "$(date): Target directory successfully added."
-        WAS_ADDED=true
+        ADDED_TO_CHIA_PLOTS=true
     else
         echo "$(date): Error. could not verify target directory was added to "\
              "'chia plots' paths"
@@ -172,11 +182,12 @@ fi
 echo "$(date): Scanning target directory..."
 PLOTS_CHECK=$(chia plots check -g $TARGET_DIR -n 5 2>&1)
 echo "$(date): Scan complete"
-#
+
 # If target directory was added to 'chia plots' by this program,
 # remove it here
-if $WAS_ADDED; then
-    echo "$(date): Removing target directory from 'chia plots' paths"
+if $ADDED_TO_CHIA_PLOTS; then
+    echo "$(date): Cleaning up." \
+         "Removing target directory from 'chia plots' paths"
     chia plots remove -d $TARGET_DIR &> /dev/null
 fi
 # Check plots for OG plots
@@ -223,7 +234,7 @@ do
                 fi
             else
                 if [[ $VERBOSE = true || $DEBUG = true ]]; then
-                    echo "$(date): Moving plot to $DEST_DIR"
+                    echo "$(date): Moving plot to: $DEST_DIR"
                 fi
                 mv $PLOT_FNAME $DEST_DIR
                 if ! [ $? = 0 ]; then
@@ -244,6 +255,16 @@ do
 # Repeat until all plots checked
 done
 echo "$(date): Finished."
+
+# If no plots were found, and $DEST_DIR was created, remove it.
+if [[ $DEST_DIR_WAS_CREATED = true && $OG_COUNT = 0 ]]; then
+        if [[ $VERBOSE = true || $DEBUG = true ]]; then
+            echo "$(date): Clean up. Destination directory was not needed." \
+            "Removing..."
+        fi
+        # Remove unused destination directory
+        rm -r $DEST_DIR
+fi
 
 # Print summary 
 echo "$(date): === Summary ==="
