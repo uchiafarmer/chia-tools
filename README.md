@@ -12,3 +12,6 @@ Small scripts for Chia farming
 * Or install it with `./install.sh`
    * Then use it as an installed program: `plotfilter`
    * This allows you to change to the desired directory, and run the script in the directory you are working in.
+
+---
+More scripts will be added when needed ..
