@@ -15,6 +15,15 @@ Small scripts for Chia farming
    * Then use it as an installed program: `plotfilter`
    * This allows you to change to the desired directory, and run the script in the directory you are working in.
 
+#### What is does:
+
+The script is just a simple automation of the tedious process of scanning your plots with
+```
+chia plots check -g /path/to/plots -n 5
+```
+and then checking each plot for a pool key. If a pool key is found, the plot is moved to a new directory. 
+The default behaviour is to move the plots into a sub-directory (for faster processing). You can specify a new destination 
+with the `-d` option. But copying to different drives or partitions is largely untested, use at your own risk.
 
 ---
 
