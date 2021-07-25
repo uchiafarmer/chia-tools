@@ -1,7 +1,7 @@
 # Chia-Tools
 
 Small scripts for Chia farming
-----
+---
 
 ### Plotfilter
 
@@ -15,6 +15,6 @@ Small scripts for Chia farming
    * This allows you to change to the desired directory, and run the script in the directory you are working in.
 
 
-----
+---
 
 *More scripts will be added when needed ..*
