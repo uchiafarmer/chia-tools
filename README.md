@@ -23,7 +23,7 @@ chia plots check -g /path/to/plots -n 5
 ```
 and then checking each plot for a pool key. If a pool key is found, the plot is moved to a new directory. 
 The default behaviour is to move the plots into a sub-directory (for faster processing). You can specify a new destination 
-with the `-d` option. But copying to different drives or partitions is largely untested, use at your own risk.
+with the `-d` option, but copying to different drives or partitions is largely untested, use at your own risk.
 
 ---
 
