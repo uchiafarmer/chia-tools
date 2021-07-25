@@ -6,7 +6,7 @@ Small scripts for Chia farming
 
 ### Plotfilter
 
-* **plotfilter.sh** -- A small script to separate OG plots from NFT plots
+* **plotfilter.sh** -- A script to separate OG plots from NFT plots
 
 #### To use:
 
