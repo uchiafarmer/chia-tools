@@ -109,7 +109,7 @@ if $DRY_RUN; then
     echo "$(tstamp)========================="
 fi
 
-# Check if path directory exists
+# Check if target directory exists
 if [ -d $TARGET_DIR ]; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then
         echo "$(tstamp)Target directory found: $TARGET_DIR"
@@ -120,7 +120,7 @@ else
     exit 1
 fi
 
-# Check if destination directory  exists. if not, create it
+# Check if destination directory exists. if not, create it
 if [ -d $DEST_DIR ]; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then 
         echo "$(tstamp)Destination directory found: $DEST_DIR"
