@@ -15,6 +15,8 @@ Small scripts for Chia farming
    * Then use it as an installed program: `plotfilter`
    * This allows you to change to the desired directory, and run the script in the directory you are working in.
 
+> Note: You might want to do a dry-run with the `-n` option first, just to double-check its behaviour. 
+
 #### What is does:
 
 The script is just a simple automation of the tedious process of scanning your plots with
