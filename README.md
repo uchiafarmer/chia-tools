@@ -1,6 +1,6 @@
 # Chia-Tools
 
-Small scripts for Chia farming
+Small LINUX scripts for Chia farming
 
 ---
 
