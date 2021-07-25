@@ -190,10 +190,47 @@ else
     fi
 fi
 
-# Grab 'chia plots check' output
-echo "$(tstamp) Scanning target directory..."
-PLOTS_CHECK=$(chia plots check -g $TARGET_DIR -n 5 2>&1)
+# Create a tempfile for plot check output
+if $DEBUG; then
+    echo "$(tstamp) Creating temp file for 'chia plots' output"
+fi
+TEMP_FILE=$(mktemp -t tmp.XXXXXX)
+if [ $? = 0 ]; then
+    if $DEBUG; then
+        echo "Created temp file: $TEMP_FILE"
+    fi
+else
+    echo "Failed to create temporary file for scanning process."
+    echo
+    exit 1
+fi
+
+echo "$(tstamp) Scanning target directory"
+# Run 'chia plots check' in the background and output to tempfile
+chia plots check -g $TARGET_DIR -n 5 2> $TEMP_FILE &
+
+echo -n "$(tstamp) This may take awhile, please be patient... "
+# while waiting for process to complete run spinner
+PID=$!
+i=1
+spinner="/-\|"
+echo -n ' '
+while [ -d /proc/$PID ]
+do
+    printf "\b${spinner:i++%${#spinner}:1}"
+    sleep 0.2
+done
+
+# Get 'chia plots check' output
+PLOTS_CHECK=$(cat $TEMP_FILE)
+echo
 echo "$(tstamp) Scan complete"
+
+# Clean up temp file
+if $DEBUG; then
+    echo "$(tstamp) Clean up. Removing temp file: $TEMP_FILE"
+fi
+rm $TEMP_FILE
 
 # If target directory was added to 'chia plots' by this program,
 # remove it here
