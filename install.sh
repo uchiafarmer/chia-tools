@@ -32,5 +32,12 @@ chmod +x plotfilter.sh
 echo "Copying script to: /usr/loca/bin"
 sudo cp plotfilter.sh /usr/local/bin/plotfilter
 
-echo "Done."
-echo "To ensure the program is working run: plotfilter -h"
+if [ $? = 0 ]; then
+    echo "Done."
+    echo "To ensure the program is working run: plotfilter -h"
+    echo
+else
+    echo "An unknown error occurred, exiting."
+    echo
+    exit 1
+fi
