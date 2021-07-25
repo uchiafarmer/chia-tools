@@ -23,68 +23,81 @@
 # SOFTWARE.
 
 # Plot Filter -- A small script to separate OG plots from NFT plots.
+# 
+# Usage Example: ./plotfilter.sh -t /media/foo/bar
+#            or: ./plotfilter.sh -n -t /media/foo/bar 
+#            or: ./plotfilter.sh -t /media/foo/bar -d /media/foo/bar/og-plots
 
-DEBUG=true
+DEBUG=false
 
 function usage {
     echo
     echo "usage: ./plotfilter.sh [OPTIONS...]"
     echo
-    echo -e "  -t\t target directory (default: current directory)"
-    echo -e "  -d\t destination directory "\
-                        "(default: '[target directory]/plots-og')"
-    echo -e "  -i\t interactive mode (default: false)"
-    echo -e "  -v\t verbose mode"
-    echo -e "  -h\t displays this help information"
+    echo -e "  -d <PATH>\t destination directory "\
+                        "(default: '<target directory>/og-plots')"
+    echo -e "\t\t Note: Must use absolute path (e.g /home/<USER HOME>/og-plots)"
+    echo -e "  -h\t\t displays this help information"
+    echo -e "  -n\t\t dry run (no files will be moved or modified)"
+    echo -e "  -t <PATH>\t target directory (default: current directory)"
+    echo -e "  -v\t\t verbose mode"
     echo
     exit 1
 }
 
 # Get options
-while getopts t:d:vih OPT
+while getopts d:hnt:v OPT
 do
     case "$OPT" in
-        t) TARGET_DIR=$OPTARG;;
         d) DEST_DIR=$OPTARG;;
-        i) INTERACTIVE=true;;
-        v) VERBOSE=true;;
         h) usage;;
-        *) echo
-            echo "bad option:"
+        n) DRY_RUN=true;;
+        t) TARGET_DIR=$OPTARG;;
+        v) VERBOSE=true;;
+        *) echo "Uknown option"
             usage;;
     esac
 done
+echo
 
-# load defaults
-if [ -z $VERBOSE ]; then
-    VERBOSE=false
-fi
+# load defaults, check options
 if [ -z $TARGET_DIR ]; then
     TARGET_DIR=$PWD
 fi
 if [ -z $DEST_DIR ]; then
-    DEST_DIR=$TARGET_DIR/plots-og
+    DEST_DIR=$TARGET_DIR/og-plots
 fi
-if [ -z $INTERACTIVE ]; then
-    INTERACTIVE=false
+if [ -z $DRY_RUN ]; then
+    DRY_RUN=false
+fi
+if [ -z $VERBOSE ]; then
+    VERBOSE=false
 fi
 
 if $DEBUG; then 
+    echo "$(date): debug information:"
     echo
     echo "TARGET_DIR=$TARGET_DIR"
+    echo "DRY_RUN=$DRY_RUN"
     echo "DEST_DIR=$DEST_DIR"
-    echo "INTERACTIVE=$INTERACTIVE"
     echo "VERBOSE=$VERBOSE"
     echo
+fi
+
+# Notify user if this is a dry run
+if $DRY_RUN; then
+    echo "$(date): ========================="
+    echo "$(date): INFO: Dry run in progress"
+    echo "$(date): ========================="
 fi
 
 # Check if path directory exists
 if [ -d $TARGET_DIR ]; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then
-        echo "target directory found: $TARGET_DIR"
+        echo "$(date): Target directory found: $TARGET_DIR"
     fi
 else
-    echo "error: target directory not found"
+    echo "$(date): Error: target directory not found"
     echo
     exit 1
 fi
@@ -92,18 +105,25 @@ fi
 # Check if destination directory  exists. if not, create it
 if [ -d $DEST_DIR ]; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then 
-        echo "destination directory found: $DEST_DIR"
+        echo "$(date): Destination directory found: $DEST_DIR"
     fi
 else
     if [[ $VERBOSE = true || $DEBUG = true ]]; then 
-        echo -n "destination directory not found, creating new directory: "
+        echo -n "$(date): Destination directory not found," \
+                "creating new directory: "
         echo $DEST_DIR
     fi
-    mkdir -p $DEST_DIR
-    if ! [ $? = 0 ]; then
-        echo "error: could not create destination directory"
-        echo
-        exit 1
+    if $DRY_RUN; then
+        if [[ $VERBOSE = true || $DEBUG = true ]]; then 
+            echo "$(date): Dry run. Skipping."
+        fi
+    else
+        mkdir -p $DEST_DIR
+        if ! [ $? = 0 ]; then
+            echo "$(date): Error: could not create destination directory"
+            echo
+            exit 1
+        fi
     fi
 fi
 
@@ -111,36 +131,122 @@ fi
 # check for chia environment
 if echo $VIRTUAL_ENV | grep chia-blockchain &> /dev/null; then
     if [[ $VERBOSE = true || $DEBUG = true ]]; then
-        echo "'chia-blockchain' virtual environment detected. proceeding."
+        echo "$(date): 'chia-blockchain' virtual environment detected:" \
+             "proceeding"
     fi
 else
-    echo
-    echo "Please run this program with the 'chia-blockchain'" \
+    echo "$(date): Please run this program with the 'chia-blockchain'" \
             "environment activated"
-    echo
     exit 1
 fi
 
-# Check if $TARGET_PATH is in `chia plots show`
-#     if not, add to chia plots with `chia plots add -d $TARGET_PATH`
-#  
-# CHECK_OUTPUT=$(chia plots check -g $PATH -n $MIN_PROOFS)
+# Check if target directory is in `chia plots show`
+IFS=$'\n'
+if chia plots show | grep -i $TARGET_DIR &> /dev/null; then
+    if [[ $VERBOSE = true || $DEBUG = true ]]; then
+        echo "$(date): Target directory already exists in 'chia plot' paths"
+    fi
+    WAS_ADDED=false
+else
+    echo "$(date): WARNING: Target directory does not exist" \
+                  "in 'chia plots' paths"
+    echo "$(date): Adding target directory to 'chia plots'"
+    chia plots add -d $TARGET_DIR &> /dev/null
+    if chia plots show | grep -i $TARGET_DIR &> /dev/null; then
+        echo "$(date): Target directory successfully added."
+        WAS_ADDED=true
+    else
+        echo "$(date): Error. could not verify target directory was added to "\
+             "'chia plots' paths"
+        echo
+        exit 1
+    fi
+fi
+
+# Grab 'chia plots check' output
+echo "$(date): Scanning target directory..."
+PLOTS_CHECK=$(chia plots check -g $TARGET_DIR -n 5 2>&1)
+echo "$(date): Scan complete"
 #
-# Remove path from `chia plots`
-#
-# Parse $CHECK_OUTPUT to SED
-#   Search for plot filename
-#       Save plot name to variable PLOT_FNAME
-#   Add next line (pool key line)
-#       Check for pool key, save value to variable POOL_KEY
-#       if [ $POOL_KEY = 'None']
-#           move plot to dir $DESTN_DIR
-#           $DESTN_DIR could be another drive, use proper write method.
-#               `mv` plot to $DESTN_DIR
-#
+# If target directory was added to 'chia plots' by this program,
+# remove it here
+if $WAS_ADDED; then
+    echo "$(date): Removing target directory from 'chia plots' paths"
+    chia plots remove -d $TARGET_DIR &> /dev/null
+fi
+# Check plots for OG plots
+echo "$(date): Checking plots... "
+OG_COUNT=0
+MOVED_COUNT=0
+for line in $PLOTS_CHECK
+do
+    # Search for plot filename
+    if echo $line | grep "Testing plot" &> /dev/null
+    then
+        # Store plot filename
+        PLOT_FNAME=$(echo $line | awk '{ print $8 }')
+        if $DEBUG; then
+            echo "$(date): Found plot: $PLOT_FNAME"
+        fi
+    fi
+    
+    # Check for pool key
+    if echo $line | grep "Pool public key:" &> /dev/null
+    then
+        # Store key value
+        POOL_PK=$(echo $line | awk '{ print $9 }')
+        if $DEBUG; then
+            echo "$(date): Pool public key: '$POOL_PK'"
+        fi
+
+        # Check if key is equal to None
+        # Why doesn't [[ "$POOL_PK" == "None" ]] work?
+        if echo $POOL_PK | grep 'None' &> /dev/null
+        then
+            if [[ $VERBOSE = true || $DEBUG = true ]]; then
+                echo "$(date): NFT plot found: $PLOT_FNAME"
+                if $DEBUG; then
+                    echo "$(date): Skipping"
+                fi
+            fi
+        else
+            # If not None, move plot to desination directory
+            echo "$(date): OG plot found: $PLOT_FNAME"
+            if $DRY_RUN; then
+                if $DEBUG; then
+                    echo "$(date): Dry run. Skipping."
+                fi
+            else
+                if [[ $VERBOSE = true || $DEBUG = true ]]; then
+                    echo "$(date): Moving plot to $DEST_DIR"
+                fi
+                mv $PLOT_FNAME $DEST_DIR
+                if ! [ $? = 0 ]; then
+                    echo "$(date): Copy failed."
+                else
+                    if $DEBUG; then
+                        echo "$(date): Move command finished sucessfully."
+                    fi
+                    (( MOVED_COUNT++ ))
+                fi
+            fi
+            (( OG_COUNT++ ))
+        fi
+    fi
+    if $DEBUG; then
+        sleep 0.1
+    fi
 # Repeat until all plots checked
-#
+done
+echo "$(date): Finished."
+
 # Print summary 
-#   n plots found
-#
+echo "$(date): === Summary ==="
+echo "$(date): OG plots found: $OG_COUNT"
+echo "$(date): OG plots moved: $MOVED_COUNT"
+if [[ $MOVED_COUNT > 0 ]]; then
+    echo "$(date): Moved plots location: $DEST_DIR"
+fi
+
 # End of program.
+echo "$(date): Program complete."
