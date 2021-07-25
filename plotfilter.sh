@@ -34,13 +34,18 @@ function usage {
     echo
     echo "usage: ./plotfilter.sh [OPTIONS...]"
     echo
-    echo -e "  -d <PATH>\t destination directory "\
-                        "(default: '<target directory>/og-plots')"
+    echo "Example:   ./plotfilter.sh -n -t /media/foo/bar "
+    echo "     or:   ./plotfilter.sh -t /media/foo/bar "
+    echo "     or:   ./plotfilter.sh -t /media/foo/bar -d" \
+         "/media/foo/bar/og-plots"
+    echo
+    echo -e "  -t <PATH>\t target directory [REQUIRED]"
+    echo -e "  -d <PATH>\t destination directory [OPTIONAL]"
+    echo -e "\t\t (DEFAULT: '<target directory>/og-plots')"
     echo -e "\t\t Note: Must use absolute path (e.g /home/<USER HOME>/og-plots)"
-    echo -e "  -h\t\t displays this help information"
     echo -e "  -n\t\t dry run (no files will be moved or modified)"
-    echo -e "  -t <PATH>\t target directory (default: current directory)"
     echo -e "  -v\t\t verbose mode"
+    echo -e "  -h\t\t displays this help information"
     echo
     exit 1
 }
@@ -58,11 +63,11 @@ do
             usage;;
     esac
 done
-echo
 
 # load defaults, check options
 if [ -z $TARGET_DIR ]; then
-    TARGET_DIR=$PWD
+    echo "Error: must specify target directory"
+    usage
 fi
 if [ -z $DEST_DIR ]; then
     DEST_DIR=$TARGET_DIR/og-plots
