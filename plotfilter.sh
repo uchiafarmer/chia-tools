@@ -197,7 +197,7 @@ fi
 TEMP_FILE=$(mktemp -t tmp.XXXXXX)
 if [ $? = 0 ]; then
     if $DEBUG; then
-        echo "Created temp file: $TEMP_FILE"
+        echo "$(tstamp) Created temp file: $TEMP_FILE"
     fi
 else
     echo "Failed to create temporary file for scanning process."
@@ -205,10 +205,17 @@ else
     exit 1
 fi
 
-echo "$(tstamp) Scanning target directory"
 # Run 'chia plots check' in the background and output to tempfile
+echo "$(tstamp) Scanning target directory"
 chia plots check -g $TARGET_DIR -n 5 2> $TEMP_FILE &
 PID=$!
+if $DEBUG; then
+    echo "$(tstamp) Started background process: $PID"
+fi
+
+# trap Ctrl-C to clean up sub-procress
+trap "kill $PID; echo; exit 1;" SIGINT
+
 echo "$(tstamp) This may take awhile, please be patient... "
 # While waiting for process to complete, show progress
 STARTED=$(tstamp)
@@ -224,6 +231,9 @@ done
 PLOTS_CHECK=$(cat $TEMP_FILE)
 echo
 echo "$(tstamp) Scan complete"
+
+# remove trap for normal operation
+trap - SIGINT
 
 # Clean up temp file
 if $DEBUG; then
