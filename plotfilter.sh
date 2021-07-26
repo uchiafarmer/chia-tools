@@ -207,7 +207,7 @@ fi
 
 echo "$(tstamp) Scanning target directory"
 # Run 'chia plots check' in the background and output to tempfile
-chia plots check -g $TARGET_DIR -n 30 2> $TEMP_FILE &
+chia plots check -g $TARGET_DIR -n 5 2> $TEMP_FILE &
 PID=$!
 echo "$(tstamp) This may take awhile, please be patient... "
 # While waiting for process to complete, show progress
