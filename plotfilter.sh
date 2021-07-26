@@ -217,15 +217,23 @@ fi
 trap "kill $PID; echo; exit 1;" SIGINT
 
 echo "$(tstamp) This may take awhile, please be patient... "
-# While waiting for process to complete, show progress
 STARTED=$(tstamp)
-while [ -d /proc/$PID ]
-do
+
+function check_progress {
+    # Show progress of 'chia plots check' scan
     TOTAL=$(cat $TEMP_FILE | grep 'Loaded' | awk '{ print $10 }')
     PROGRESS=$(cat $TEMP_FILE | grep 'Testing plot' | wc -l)
     echo -e -n "$STARTED Progress: (${PROGRESS:-0}/${TOTAL:-0})\r"
+}
+
+# While waiting for process to complete, show progress
+while [ -d /proc/$PID ]
+do
+    check_progress
     sleep 0.1
 done
+# When the process is complete show final result
+check_progress
 
 # Get 'chia plots check' output
 PLOTS_CHECK=$(cat $TEMP_FILE)
