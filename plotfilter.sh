@@ -192,7 +192,7 @@ fi
 
 # Create a tempfile for plot check output
 if $DEBUG; then
-    echo "$(tstamp) Creating temp file for 'chia plots' output"
+    echo "$(tstamp) Creating temp file for 'chia plots check' output"
 fi
 TEMP_FILE=$(mktemp -t tmp.XXXXXX)
 if [ $? = 0 ]; then
@@ -207,18 +207,17 @@ fi
 
 echo "$(tstamp) Scanning target directory"
 # Run 'chia plots check' in the background and output to tempfile
-chia plots check -g $TARGET_DIR -n 5 2> $TEMP_FILE &
-
-echo -n "$(tstamp) This may take awhile, please be patient... "
-# while waiting for process to complete run spinner
+chia plots check -g $TARGET_DIR -n 30 2> $TEMP_FILE &
 PID=$!
-i=1
-spinner="/-\|"
-echo -n ' '
+echo "$(tstamp) This may take awhile, please be patient... "
+# While waiting for process to complete, show progress
+STARTED=$(tstamp)
 while [ -d /proc/$PID ]
 do
-    printf "\b${spinner:i++%${#spinner}:1}"
-    sleep 0.2
+    TOTAL=$(cat $TEMP_FILE | grep 'Loaded' | awk '{ print $10 }')
+    PROGRESS=$(cat $TEMP_FILE | grep 'Testing plot' | wc -l)
+    echo -e -n "$STARTED Progress: (${PROGRESS:-0}/${TOTAL:-0})\r"
+    sleep 0.1
 done
 
 # Get 'chia plots check' output
@@ -239,6 +238,7 @@ if $ADDED_TO_CHIA_PLOTS; then
          "Removing target directory from 'chia plots' paths"
     chia plots remove -d $TARGET_DIR &> /dev/null
 fi
+
 # Check plots for OG plots
 echo "$(tstamp) Checking plots... "
 OG_COUNT=0
