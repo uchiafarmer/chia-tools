@@ -28,7 +28,7 @@
 #            or: ./plotfilter.sh -n -t /media/foo/bar 
 #            or: ./plotfilter.sh -t /media/foo/bar -d /media/foo/bar/og-plots
 
-DEBUG=false
+DEBUG=true
 TIMESTAMP=true
 
 function usage {
@@ -81,9 +81,13 @@ done
 # load defaults, check options
 if [ -z $TARGET_DIR ]; then
     TARGET_DIR=$PWD
+else
+    TARGET_DIR=${TARGET_DIR%/}
 fi
 if [ -z $DEST_DIR ]; then
     DEST_DIR=$TARGET_DIR/og-plots
+else
+    DEST_DIR=${DEST_DIR%/}
 fi
 if [ -z $DRY_RUN ]; then
     DRY_RUN=false
