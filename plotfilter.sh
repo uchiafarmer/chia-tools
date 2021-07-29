@@ -82,11 +82,13 @@ done
 if [ -z $TARGET_DIR ]; then
     TARGET_DIR=$PWD
 else
+    # Remove trailing slash if there is one
     TARGET_DIR=${TARGET_DIR%/}
 fi
 if [ -z $DEST_DIR ]; then
     DEST_DIR=$TARGET_DIR/og-plots
 else
+    # Remove trailing slash if there is one
     DEST_DIR=${DEST_DIR%/}
 fi
 if [ -z $DRY_RUN ]; then
