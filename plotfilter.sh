@@ -318,27 +318,36 @@ do
                 fi
             fi
         else
-            # If output file specified, add to file
-            if ! [ -z $OUTPUT_FILE ]; then
-                echo "OG,$PLOT_FNAME" >> "$OUTPUT_FILE"
-            fi
             # If not None, move plot to desination directory
             echo "$(tstamp) OG plot found: $PLOT_FNAME"
             if $DRY_RUN; then
                 if $DEBUG; then
                     echo "$(tstamp) Dry run. Skipping."
                 fi
+                # If output file specified, add to file
+                if ! [ -z $OUTPUT_FILE ]; then
+                    echo "OG,$PLOT_FNAME" >> "$OUTPUT_FILE"
+                fi
             else
                 if [[ $VERBOSE = true || $DEBUG = true ]]; then
                     echo "$(tstamp) Moving plot to: $DEST_DIR"
                 fi
+
+                # Move file
                 mv $PLOT_FNAME $DEST_DIR
+
                 if ! [ $? = 0 ]; then
                     echo "$(tstamp) Copy failed."
                 else
                     if $DEBUG; then
                         echo "$(tstamp) Move command finished sucessfully."
                     fi
+
+                    # If output file specified, add to file
+                    if ! [ -z $OUTPUT_FILE ]; then
+                        echo "OG,$DEST_DIR/${PLOT_FNAME##*/}" >> "$OUTPUT_FILE"
+                    fi
+
                     (( MOVED_COUNT++ ))
                 fi
             fi
