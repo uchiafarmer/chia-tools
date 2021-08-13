@@ -28,12 +28,6 @@
 #            or: ./plotfilter.sh -n -t /media/foo/bar 
 #            or: ./plotfilter.sh -t /media/foo/bar -d /media/foo/bar/og-plots
 
-# TODO
-# * Add option -o file
-# * Design output format
-# * Write output to file.
-
-
 DEBUG=false
 TIMESTAMP=true
 
@@ -52,6 +46,7 @@ function usage {
     echo -e "  -d <PATH>\t destination directory [OPTIONAL]"
     echo -e "\t\t (Default: '<target directory>/og-plots')"
     echo -e "  -n\t\t dry run (no files will be moved or modified)"
+    echo -e "  -o <FILE>\t output list of discovered plots to csv file"
     echo -e "  -v\t\t verbose mode"
     echo -e "  -h\t\t displays this help information"
     echo
@@ -71,12 +66,13 @@ function tstamp {
 }
 
 # Get options
-while getopts d:hnt:v OPT
+while getopts d:hnt:vo: OPT
 do
     case "$OPT" in
         d) DEST_DIR=$OPTARG;;
         h) usage;;
         n) DRY_RUN=true;;
+        o) OUTPUT_FILE=$OPTARG;;
         t) TARGET_DIR=$OPTARG;;
         v) VERBOSE=true;;
         *) echo "Uknown option"
@@ -217,6 +213,19 @@ else
     exit 1
 fi
 
+# Check if output file exists
+if [ -f $OUTPUT_FILE ]; then
+    if $DEBUG; then
+        echo "$(tstamp) $OUTPUT_FILE exists, overwriting..."
+    fi
+    cat /dev/null &> $OUTPUT_FILE
+else
+    if $DEBUG; then
+        echo "$(tstamp) $OUTPUT_FILE not found. Creating..."
+    fi
+    touch $OUTPUT_FILE
+fi
+
 # Run 'chia plots check' in the background and output to tempfile
 echo "$(tstamp) Scanning target directory"
 chia plots check -g $TARGET_DIR -n 5 2> $TEMP_FILE &
@@ -295,9 +304,13 @@ do
         fi
 
         # Check if key is equal to None
-        # Why doesn't [[ "$POOL_PK" == "None" ]] work?
         if echo $POOL_PK | grep 'None' &> /dev/null
         then
+            # If output file specified, add to file
+            if ! [ -z $OUTPUT_FILE ]; then
+                echo "NFT,$PLOT_FNAME" >> "$OUTPUT_FILE"
+            fi
+
             if [[ $VERBOSE = true || $DEBUG = true ]]; then
                 echo "$(tstamp) NFT plot found: $PLOT_FNAME"
                 if $DEBUG; then
@@ -305,6 +318,10 @@ do
                 fi
             fi
         else
+            # If output file specified, add to file
+            if ! [ -z $OUTPUT_FILE ]; then
+                echo "OG,$PLOT_FNAME" >> "$OUTPUT_FILE"
+            fi
             # If not None, move plot to desination directory
             echo "$(tstamp) OG plot found: $PLOT_FNAME"
             if $DRY_RUN; then
