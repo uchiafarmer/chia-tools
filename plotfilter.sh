@@ -28,6 +28,12 @@
 #            or: ./plotfilter.sh -n -t /media/foo/bar 
 #            or: ./plotfilter.sh -t /media/foo/bar -d /media/foo/bar/og-plots
 
+# TODO
+# * Add option -o file
+# * Design output format
+# * Write output to file.
+
+
 DEBUG=false
 TIMESTAMP=true
 
