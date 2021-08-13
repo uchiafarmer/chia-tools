@@ -17,7 +17,7 @@ Small LINUX scripts for Chia farming
 
 > Note: You might want to do a dry-run with the `-n` option first, to verify its behaviour. 
 
-#### What is does:
+#### What it does:
 
 The script is just a simple automation of the tedious process of scanning your plots with
 ```
