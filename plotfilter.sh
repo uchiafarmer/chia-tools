@@ -28,8 +28,15 @@
 #            or: ./plotfilter.sh -n -t /media/foo/bar 
 #            or: ./plotfilter.sh -t /media/foo/bar -d /media/foo/bar/og-plots
 
+# Enable/Disable debug information
 DEBUG=false
+
+# Disable timestamps by changing to 'false'
 TIMESTAMP=true
+
+# Default number of proofs for testing each plot
+CHALLENGES=5
+
 
 function usage {
     # Display usage instructions
@@ -47,6 +54,7 @@ function usage {
     echo -e "\t\t (Default: '<target directory>/og-plots')"
     echo -e "  -n\t\t dry run (no files will be moved or modified)"
     echo -e "  -o <FILE>\t output list of discovered plots to csv file"
+    echo -e "  -c\t\t number of challenges to test each plot (Default: 5)"
     echo -e "  -v\t\t verbose mode"
     echo -e "  -h\t\t displays this help information"
     echo
@@ -66,7 +74,7 @@ function tstamp {
 }
 
 # Get options
-while getopts d:hnt:vo: OPT
+while getopts d:hnt:vo:c: OPT
 do
     case "$OPT" in
         d) DEST_DIR=$OPTARG;;
@@ -74,6 +82,7 @@ do
         n) DRY_RUN=true;;
         o) OUTPUT_FILE=$OPTARG;;
         t) TARGET_DIR=$OPTARG;;
+        c) CHALLENGES=$OPTARG;;
         v) VERBOSE=true;;
         *) echo "Uknown option"
             usage;;
@@ -218,17 +227,17 @@ if [ -f $OUTPUT_FILE ]; then
     if $DEBUG; then
         echo "$(tstamp) $OUTPUT_FILE exists, overwriting..."
     fi
-    cat /dev/null &> $OUTPUT_FILE
+    cat /dev/null &> "$OUTPUT_FILE"
 else
     if $DEBUG; then
         echo "$(tstamp) $OUTPUT_FILE not found. Creating..."
     fi
-    touch $OUTPUT_FILE
+    touch "$OUTPUT_FILE"
 fi
 
 # Run 'chia plots check' in the background and output to tempfile
 echo "$(tstamp) Scanning target directory"
-chia plots check -g $TARGET_DIR -n 5 2> $TEMP_FILE &
+chia plots check -g $TARGET_DIR -n $CHALLENGES 2> $TEMP_FILE &
 PID=$!
 if $DEBUG; then
     echo "$(tstamp) Started background process: $PID"
