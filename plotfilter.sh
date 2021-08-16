@@ -237,7 +237,7 @@ fi
 
 # Run 'chia plots check' in the background and output to tempfile
 echo "$(tstamp) Scanning target directory"
-chia plots check -g $TARGET_DIR -n $CHALLENGES 2> $TEMP_FILE &
+chia plots check -g $TARGET_DIR -n $CHALLENGES &> $TEMP_FILE &
 PID=$!
 if $DEBUG; then
     echo "$(tstamp) Started background process: $PID"
@@ -286,6 +286,52 @@ if $ADDED_TO_CHIA_PLOTS; then
          "Removing target directory from 'chia plots' paths"
     chia plots remove -d $TARGET_DIR &> /dev/null
 fi
+
+# Check for plot warnings
+WARN_COUNT=0
+for line in $PLOTS_CHECK
+do
+    if echo $line | grep "WARNING.*Plot" &> /dev/null; then
+        echo -n $(tstamp)
+        echo $line | cut -d ':' -f 4-
+        (( WARN_COUNT++ ))
+    fi
+done
+
+# Check for corrupt files
+ERROR_COUNT=0
+for line in $PLOTS_CHECK
+do
+    if echo $line | grep "ERROR" &> /dev/null; then
+        # Handle failed to open file error
+        if echo $line | grep "Failed to open" &> /dev/null; then
+            echo -n $(tstamp)
+            echo $line | cut -d ':' -f 4- | cut -d ' ' -f -20
+            # output error to csv
+            if ! [ -z $OUTPUT_FILE ]; then
+                PLOT_FNAME=$(echo $line | awk '{ print $10 }')
+                # Remove trailing period from this error
+                PLOT_FNAME=${PLOT_FNAME%.}
+                echo "INVALID,$PLOT_FNAME" >> "$OUTPUT_FILE"
+            fi
+        else
+            # Handle any other error...
+            echo -n $(tstamp)
+            echo $line | cut -d ':' -f 4-
+        fi
+        (( ERROR_COUNT++ ))
+    fi
+done
+
+# Check for invalid plots
+INVALID_PLOTS=false
+for line in $PLOTS_CHECK
+do
+    if echo $line | grep -i invalid &> /dev/null; then
+        INVALID_PLOTS=true
+        INVALID_COUNT=$( echo $line | awk '{ print $6 }' )
+    fi
+done
 
 # Check plots for OG plots
 echo "$(tstamp) Checking plots... "
@@ -380,6 +426,7 @@ if [[ $DEST_DIR_WAS_CREATED = true && $OG_COUNT = 0 ]]; then
         rm -r $DEST_DIR
 fi
 
+
 # Print summary 
 echo "$(tstamp) === Summary ==="
 echo "$(tstamp) OG plots found: $OG_COUNT"
@@ -388,6 +435,24 @@ if [[ $MOVED_COUNT > 0 ]]; then
     echo "$(tstamp) Moved plots to location: $DEST_DIR"
     echo "$(tstamp) *** Please add this directory to your Chia program if" \
         "you wish to continue farming with them. ***"
+fi
+if $INVALID_PLOTS; then
+    echo "$(tstamp) Invalid plots found: $INVALID_COUNT"
+    echo
+    echo "Check your plots are valid with 'chia plots check'..."
+    echo "Or re-run this program with a higher number of challenges:"
+    echo "'$0 -c NUMBER_OF_CHALLENGES...'"
+    echo
+fi
+if (( $WARN_COUNT > 0 )); then
+    echo $(tstamp) $WARN_COUNT WARNINGS were found!
+fi
+if (( $ERROR_COUNT > 0 )); then
+    echo $(tstamp) $ERROR_COUNT ERRORS were found!
+fi
+if (( $WARN_COUNT > 0 || $ERROR_COUNT > 0)); then
+    echo "$(tstamp) Please check your plots with 'chia plots check'" \
+        "for more information."
 fi
 
 echo "$(tstamp) Program complete."
