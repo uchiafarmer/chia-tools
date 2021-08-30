@@ -29,7 +29,8 @@
 chmod +x plotfilter.sh
 
 # Copy script to /usr/local/bin
-echo "Copying script to: /usr/loca/bin"
+echo "Copying scripts to: /usr/loca/bin"
+sudo cp smart-scan.sh /usr/local/bin/smart-scan 
 sudo cp plotfilter.sh /usr/local/bin/plotfilter
 
 if [ $? = 0 ]; then
